@@ -9,7 +9,25 @@
 #include <pthread.h> 
 #include <errno.h> 
 
-int main(){
+void spawn();
+
+/*
+To compile:	gcc sort.c -Wall -lm -g -lpthread
+To run:		./a.out file1 file2 file3 file4 ... fileN
+*/
+
+int main(int argc, const char* argv[]){
+
+	printf("\n-------------------------------------------------\n");
+	printf("Files that need to be sorted: ");
+
+	int i;
+	//Prints the files given in the arguments
+	for(i = 1; i < argc; i++ )
+	{
+		printf( "%s ", argv[i] );
+	}
+	printf("\n");
 
 	/*Forking*/
 	spawn();
