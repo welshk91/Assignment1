@@ -53,13 +53,13 @@ void  spawn()
 	}
 
 	else if(pid>0) {                                  /* for the parent:      */
-		printf("Parent: child pid = %d, my pid = %d, parent pid = %d \n", pid, getpid(), getppid());
+		printf("Parent: my pid = %d, parent pid = %d \n", getpid(), getppid());
 
 		if( (pid=fork()) ==0){
-			printf("Child: child pid = %d, my pid = %d, parent pid = %d \n", pid, getpid(), getppid());
+			printf("	Child: child pid = %d, my pid = %d, parent pid = %d \n", pid, getpid(), getppid());
 			for(j=0; j<2; j++){
 				if( (pid=fork()) ==0){
-					printf("Grandchild: child pid = %d, my pid = %d, parent pid = %d \n", pid, getpid(), getppid());
+					printf("		Grandchild: child pid = %d, my pid = %d, parent pid = %d \n", pid, getpid(), getppid());
 					exit(0);
 				}//end of if		
 			}//end of for	
@@ -72,11 +72,11 @@ void  spawn()
 	}
 
 	else if (pid == 0) {          /* for the child process:         */
-		printf("Child: child pid = %d, my pid = %d, parent pid = %d \n", pid, getpid(), getppid());
+		printf("	Child: child pid = %d, my pid = %d, parent pid = %d \n", pid, getpid(), getppid());
 
 		for(j=0; j<2; j++){
 			if( (pid=fork()) ==0){
-				printf("Grandchild: child pid = %d, my pid = %d, parent pid = %d \n", pid, getpid(), getppid());
+				printf("		Grandchild: child pid = %d, my pid = %d, parent pid = %d \n", pid, getpid(), getppid());
 				exit(0);
 			}//end of if		
 		}//end of for
