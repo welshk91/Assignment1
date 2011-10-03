@@ -32,31 +32,56 @@ int main(int argc, const char* argv[]){
 	/*Forking*/
 	spawn();
 	return 0;
-}
+
+} //end of main
 
 void  spawn()
 {
-   pid_t  pid;
+   pid_t  pid1, pid2;
    int    status;
 
-   pid = fork();
+   pid1 = fork();
 
-   if (pid < 0) {		/*Error*/
+   if (pid1 < 0) {		/*Error*/
             printf("*** ERROR: forking child process failed\n");
             exit(1);
    }
 
-  else if (pid == 0) {          /* for the child process:         */
-       printf("***Child code here:   \n");
+  else if (pid1 == 0) {          /* for the child process:         */
+       
+
+	printf("***Child1 code here:   \n");
 	//assign files
 	//sort files
 	//pipe first value to parent
-       printf("***Child code ending\n");
+	printf("***Child1 code ending\n");
    }
 
   else {                                  /* for the parent:      */
-       printf("***Parent Code Here:    \n");
-       while (wait(&status) != pid);       /* wait for completion  */
-       printf("***Parent code ending\n");
+	
+	/*Forking a second child*/
+	pid2 = fork();
+		
+	if (pid2 < 0) {		/*Error*/
+            printf("*** ERROR: forking child process failed\n");
+            exit(1);
+   	}		       
+
+	else if (pid2 == 0) {          /* for the child process:         */
+       
+
+	printf("***Child2 code here:   \n");
+	//assign files
+	//sort files
+	//pipe first value to parent
+	printf("***Child2 code ending\n");
+	}
+		
+	
+	//printf("***Parent Code Here:    \n");
+	//while (wait(&status) != pid);       /* wait for completion  */
+	//printf("***Parent code ending\n");
        }
-}
+
+}//end of spawn
+
