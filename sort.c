@@ -29,59 +29,59 @@ int main(int argc, const char* argv[]){
 	}
 	printf("\n");
 
-	/*Forking*/
+	/*Create Process tree with forks*/
 	spawn();
+	
+	/*Give time for print statements*/
+	sleep(1);
+
 	return 0;
 
 } //end of main
 
 void  spawn()
 {
-   pid_t  pid1, pid2;
-   int    status;
+	pid_t  pid;
+	//int    status;
+	int j;
 
-   pid1 = fork();
+	pid = fork();
 
-   if (pid1 < 0) {		/*Error*/
-            printf("*** ERROR: forking child process failed\n");
-            exit(1);
-   }
-
-  else if (pid1 == 0) {          /* for the child process:         */
-       
-
-	printf("***Child1 code here:   \n");
-	//assign files
-	//sort files
-	//pipe first value to parent
-	printf("***Child1 code ending\n");
-   }
-
-  else {                                  /* for the parent:      */
-	
-	/*Forking a second child*/
-	pid2 = fork();
-		
-	if (pid2 < 0) {		/*Error*/
-            printf("*** ERROR: forking child process failed\n");
-            exit(1);
-   	}		       
-
-	else if (pid2 == 0) {          /* for the child process:         */
-       
-
-	printf("***Child2 code here:   \n");
-	//assign files
-	//sort files
-	//pipe first value to parent
-	printf("***Child2 code ending\n");
+	if (pid < 0) {		/*Error*/
+	        printf("*** ERROR: forking child process failed\n");
+	        exit(1);
 	}
+
+	else if(pid>0) {                                  /* for the parent:      */
+		printf("Parent: child pid = %d, my pid = %d, parent pid = %d \n", pid, getpid(), getppid());
+
+		if( (pid=fork()) ==0){
+			printf("Child: child pid = %d, my pid = %d, parent pid = %d \n", pid, getpid(), getppid());
+			for(j=0; j<2; j++){
+				if( (pid=fork()) ==0){
+					printf("Grandchild: child pid = %d, my pid = %d, parent pid = %d \n", pid, getpid(), getppid());
+					exit(0);
+				}//end of if		
+			}//end of for	
 		
-	
-	//printf("***Parent Code Here:    \n");
-	//while (wait(&status) != pid);       /* wait for completion  */
-	//printf("***Parent code ending\n");
-       }
+		}//end of if
+
+		//printf("***Parent Code Here:    \n");
+		//while (wait(&status) != pid);       /* wait for completion  */
+		//printf("***Parent code ending\n");
+	}
+
+	else if (pid == 0) {          /* for the child process:         */
+		printf("Child: child pid = %d, my pid = %d, parent pid = %d \n", pid, getpid(), getppid());
+
+		for(j=0; j<2; j++){
+			if( (pid=fork()) ==0){
+				printf("Grandchild: child pid = %d, my pid = %d, parent pid = %d \n", pid, getpid(), getppid());
+				exit(0);
+			}//end of if		
+		}//end of for
+
+	}//end of child
+
 
 }//end of spawn
-
