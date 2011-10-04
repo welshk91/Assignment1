@@ -34,7 +34,7 @@ int main(int argc, const char* argv[]){
 	
 	/*Give time for print statements*/
 	sleep(1);
-
+	
 	return 0;
 
 } //end of main
@@ -60,15 +60,12 @@ void  spawn()
 			for(j=0; j<2; j++){
 				if( (pid=fork()) ==0){
 					printf("		Grandchild: my pid = %d, parent pid = %d \n", getpid(), getppid());
+					//call function to handle picking a file out of the args and sorting it
 					exit(0);
 				}//end of if		
 			}//end of for	
 		
 		}//end of if
-
-		//printf("***Parent Code Here:    \n");
-		//while (wait(&status) != pid);       /* wait for completion  */
-		//printf("***Parent code ending\n");
 	}
 
 	else if (pid == 0) {          /* for the child process:         */
@@ -77,11 +74,11 @@ void  spawn()
 		for(j=0; j<2; j++){
 			if( (pid=fork()) ==0){
 				printf("		Grandchild: my pid = %d, parent pid = %d \n", getpid(), getppid());
+				//call function to handle picking a file out of the args and sorting it
 				exit(0);
 			}//end of if		
 		}//end of for
 
 	}//end of child
 
-	printf("\n");
 }//end of spawn
