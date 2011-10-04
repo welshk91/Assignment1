@@ -42,6 +42,7 @@ int main(int argc, char* argv[]){
 
 } //end of main
 
+/*Function used to build process tree*/
 void  spawn()
 {
 	pid_t  pid;
@@ -84,16 +85,56 @@ void  spawn()
 
 	}//end of child
 
-	//if(getpid()>getppid() && pid==0){
-	//	printf("boo\n");
-	//}
-
 }//end of spawn
 
+/*Function used to compare in qsort()*/
+int compare (const void * a, const void * b)
+{
+
+  if (*((char*)a)==*((char*)b))
+    return 0;
+  else
+    if (*((char*)a)< *((char*)b))
+        return -1;
+     else
+      return 1;
+}
+
+/*Function that opens a file, reads, and sorts it*/
 void sortFile(int p, char f[]){
 
-	printf( "*** %s ", f);
-	printf( "being read by %d \n", p);	
+	FILE *pFile;
+	char buffer[256];
+//	int buffer2[] = {};
+
+	printf( "*** %s being read by %d \n", f, p);
+
+	pFile = fopen(f,"r");
+	if (pFile == NULL) {
+		printf("File %s doesn't exist\n",f);
+		exit(1);
+	}
+
+	while (!feof(pFile)){
+        	fgets(buffer,256,pFile);
+	}//end of while	
+
+	int sizeBuffer;
+	while(buffer[sizeBuffer]!='\0'){	
+		//buffer2[sizeBuffer]=(atoi)(&buffer[sizeBuffer]);		
+		sizeBuffer++;
+	}
+
+	printf("Size of buffer: %d \n", sizeBuffer);
+	//printf("Unsorted buffer: %d	", *buffer2);
+	//qsort(buffer, sizeBuffer, sizeof(int), compare);
+	//printf("Sorted buffer: %s",buffer);
+	//int n;
+	//for (n=0; n<sizeBuffer; n++)
+     	//	printf ( "%d ",buffer2[n]);	
+
+	printf("\n");
+
 	exit(0);
 
 }
