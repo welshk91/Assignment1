@@ -10,13 +10,15 @@
 #include <errno.h> 
 
 void spawn();
+void sortFile(int p, char f[]);
+char* files[] = {};
 
 /*
 To compile:	gcc sort.c -Wall -lm -g -lpthread
 To run:		./a.out file1 file2 file3 file4 ... fileN
 */
 
-int main(int argc, const char* argv[]){
+int main(int argc, char* argv[]){
 
 	printf("\n-------------------------------------------------\n");
 	printf("Files that need to be sorted: ");
@@ -26,6 +28,7 @@ int main(int argc, const char* argv[]){
 	for(i = 1; i < argc; i++ )
 	{
 		printf( "%s ", argv[i] );
+		files[i]=argv[i];
 	}
 	printf("\n");
 
@@ -34,7 +37,7 @@ int main(int argc, const char* argv[]){
 	
 	/*Give time for print statements*/
 	sleep(1);
-	
+
 	return 0;
 
 } //end of main
@@ -60,8 +63,8 @@ void  spawn()
 			for(j=0; j<2; j++){
 				if( (pid=fork()) ==0){
 					printf("		Grandchild: my pid = %d, parent pid = %d \n", getpid(), getppid());
-					//call function to handle picking a file out of the args and sorting it
-					exit(0);
+					sortFile(getpid(), files[j+1]);				
+					//exit(0);
 				}//end of if		
 			}//end of for	
 		
@@ -74,11 +77,23 @@ void  spawn()
 		for(j=0; j<2; j++){
 			if( (pid=fork()) ==0){
 				printf("		Grandchild: my pid = %d, parent pid = %d \n", getpid(), getppid());
-				//call function to handle picking a file out of the args and sorting it
-				exit(0);
+				sortFile(getpid(), files[j+3]);
+				//exit(0);
 			}//end of if		
 		}//end of for
 
 	}//end of child
 
+	//if(getpid()>getppid() && pid==0){
+	//	printf("boo\n");
+	//}
+
 }//end of spawn
+
+void sortFile(int p, char f[]){
+
+	printf( "*** %s ", f);
+	printf( "being read by %d \n", p);	
+	exit(0);
+
+}
