@@ -12,6 +12,10 @@
 void spawn();
 void sortFile(int p, char f[]);
 char* files[] = {};
+void read_pipe(int f);
+void write_pipe(int f);
+int pipeLeft[2];
+int pipeRight[2];
 
 /*
 To compile:	gcc sort.c -Wall -lm -g -lpthread
@@ -47,6 +51,7 @@ void  spawn()
 {
 	pid_t  pid;
 	//int    status;
+
 	int j;
 
 	pid = fork();
@@ -59,9 +64,12 @@ void  spawn()
 	else if(pid>0) {                                  /* for the parent:      */
 		printf("Parent: my pid = %d, parent pid = %d \n", getpid(), getppid());
 
+	/*Left Side*/
 		if( (pid=fork()) ==0){
 			printf("	Child: my pid = %d, parent pid = %d \n", getpid(), getppid());
-			for(j=0; j<2; j++){
+			read_pipe(pipeLeft[0]);
+
+			for(j=0; j<2; j++){	/*Grandchild process*/
 				if( (pid=fork()) ==0){
 					printf("		Grandchild: my pid = %d, parent pid = %d \n", getpid(), getppid());
 					sortFile(getpid(), files[j+1]);				
@@ -72,10 +80,12 @@ void  spawn()
 		}//end of if
 	}
 
+	/*Right Side*/
 	else if (pid == 0) {          /* for the child process:         */
 		printf("	Child: my pid = %d, parent pid = %d \n", getpid(), getppid());
+		read_pipe(pipeRight[0]);
 
-		for(j=0; j<2; j++){
+		for(j=0; j<2; j++){	/*Grandchild process*/
 			if( (pid=fork()) ==0){
 				printf("		Grandchild: my pid = %d, parent pid = %d \n", getpid(), getppid());
 				sortFile(getpid(), files[j+3]);
@@ -119,14 +129,21 @@ void sortFile(int p, char f[]){
         	fgets(buffer,256,pFile);
 	}//end of while	
 
-	int sizeBuffer;
+	int sizeBuffer = 0;
 	while(buffer[sizeBuffer]!='\0'){	
-		//buffer2[sizeBuffer]=(atoi)(&buffer[sizeBuffer]);		
+//	while(sizeBuffer<5){
+//		buffer2[sizeBuffer] = atoi (&buffer[sizeBuffer]);		
 		sizeBuffer++;
 	}
 
-	printf("Size of buffer: %d \n", sizeBuffer);
-	//printf("Unsorted buffer: %d	", *buffer2);
+//	for(sizeBuffer = 0; sizeBuffer<5;sizeBuffer++){
+//		buffer2[sizeBuffer] = atoi (&buffer[sizeBuffer]);	
+//	}
+	
+//	printf("%d ", atoi (&buffer[2]));
+
+	//printf("Size of buffer: %d \n", sizeBuffer);
+	printf("Unsorted buffer: %s	", buffer);
 	//qsort(buffer, sizeBuffer, sizeof(int), compare);
 	//printf("Sorted buffer: %s",buffer);
 	//int n;
@@ -135,6 +152,29 @@ void sortFile(int p, char f[]){
 
 	printf("\n");
 
+	write_pipe(pipeLeft[1]);
+
 	exit(0);
 
 }
+
+/*Write a value to pipe*/
+void write_pipe(int f){
+	FILE *stream;
+	stream = fdopen (f, "w");
+	fprintf (stream, "hello, world!\n");
+	fprintf (stream, "goodbye, world!\n");
+	fclose (stream);
+}
+
+/*Read a value from pipe*/
+void read_pipe(int f){
+	FILE *stream;
+	int c;
+	stream = fdopen (f, "r");
+	while ((c = fgetc (stream)) != EOF){
+		putchar (c);
+	}
+	fclose (stream);
+}
+
