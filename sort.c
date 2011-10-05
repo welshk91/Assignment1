@@ -9,13 +9,18 @@
 #include <pthread.h> 
 #include <errno.h> 
 
+#define READ 0 
+#define WRITE 1 
+
 void spawn();
 void sortFile(int p, char f[]);
 char* files[] = {};
-void read_pipe(int f);
-void write_pipe(int f);
-int pipeLeft[2];
-int pipeRight[2];
+void read_pipe(int f, int p);
+void write_pipe(int f, int p);
+int pipeLeft[2] = {0};
+int pipeRight[2] = {0};
+FILE *myLog;
+char readbuffer[80];
 
 /*
 To compile:	gcc sort.c -Wall -lm -g -lpthread
@@ -23,9 +28,30 @@ To run:		./a.out file1 file2 file3 file4 ... fileN
 */
 
 int main(int argc, char* argv[]){
+	
+	/* Create a Log */
+	myLog = fopen("log.txt","w+");
+
+	/* Create the pipes.  */
+	if (pipe(pipeRight)){
+		printf ("Pipe Right failed to create \n");
+		fprintf(myLog, "Pipe Right failed to create \n");
+		exit(1);
+	}
+
+	/* Create the pipes.  */
+	if (pipe (pipeLeft)){
+		printf ("Pipe Left failed to create \n");
+		fprintf(myLog, "Pipe Left failed to create \n");
+		exit(1);
+	}
 
 	printf("\n-------------------------------------------------\n");
+	fprintf(myLog, "\n--------------------------------------------------------\n");
 	printf("Files that need to be sorted: ");
+	fprintf(myLog, "Files that need to be sorted: ");
+	
+	fclose(myLog);
 
 	int i;
 	//Prints the files given in the arguments
@@ -36,12 +62,16 @@ int main(int argc, char* argv[]){
 	}
 	printf("\n");
 
+	//	myLog = fopen("log.txt","a+");
+	//	fprintf(myLog, "%s ", files[2]);
+	//	fclose(myLog);
+
 	/*Create Process tree with forks*/
 	spawn();
 	
 	/*Give time for print statements*/
 	sleep(1);
-
+	
 	return 0;
 
 } //end of main
@@ -51,7 +81,6 @@ void  spawn()
 {
 	pid_t  pid;
 	//int    status;
-
 	int j;
 
 	pid = fork();
@@ -67,23 +96,25 @@ void  spawn()
 	/*Left Side*/
 		if( (pid=fork()) ==0){
 			printf("	Child: my pid = %d, parent pid = %d \n", getpid(), getppid());
-			read_pipe(pipeLeft[0]);
+			close(pipeLeft[1]);
+			read_pipe(pipeLeft[0],getpid());
 
 			for(j=0; j<2; j++){	/*Grandchild process*/
 				if( (pid=fork()) ==0){
 					printf("		Grandchild: my pid = %d, parent pid = %d \n", getpid(), getppid());
+					close(pipeLeft[0]);
 					sortFile(getpid(), files[j+1]);				
 					//exit(0);
 				}//end of if		
 			}//end of for	
-		
+
 		}//end of if
 	}
 
 	/*Right Side*/
 	else if (pid == 0) {          /* for the child process:         */
 		printf("	Child: my pid = %d, parent pid = %d \n", getpid(), getppid());
-		read_pipe(pipeRight[0]);
+		write_pipe(pipeLeft[1], getpid());				
 
 		for(j=0; j<2; j++){	/*Grandchild process*/
 			if( (pid=fork()) ==0){
@@ -115,7 +146,6 @@ void sortFile(int p, char f[]){
 
 	FILE *pFile;
 	char buffer[256];
-//	int buffer2[] = {};
 
 	printf( "*** %s being read by %d \n", f, p);
 
@@ -131,16 +161,9 @@ void sortFile(int p, char f[]){
 
 	int sizeBuffer = 0;
 	while(buffer[sizeBuffer]!='\0'){	
-//	while(sizeBuffer<5){
 //		buffer2[sizeBuffer] = atoi (&buffer[sizeBuffer]);		
 		sizeBuffer++;
 	}
-
-//	for(sizeBuffer = 0; sizeBuffer<5;sizeBuffer++){
-//		buffer2[sizeBuffer] = atoi (&buffer[sizeBuffer]);	
-//	}
-	
-//	printf("%d ", atoi (&buffer[2]));
 
 	//printf("Size of buffer: %d \n", sizeBuffer);
 	printf("Unsorted buffer: %s	", buffer);
@@ -148,33 +171,43 @@ void sortFile(int p, char f[]){
 	//printf("Sorted buffer: %s",buffer);
 	//int n;
 	//for (n=0; n<sizeBuffer; n++)
-     	//	printf ( "%d ",buffer2[n]);	
+     	//	printf ( "%d ",buffer[n]);	
 
 	printf("\n");
 
-	write_pipe(pipeLeft[1]);
+	//write_pipe(pipeLeft[WRITE], getpid());	
+	//read_pipe(pipeLeft[READ], getpid());
 
 	exit(0);
-
 }
 
 /*Write a value to pipe*/
-void write_pipe(int f){
-	FILE *stream;
-	stream = fdopen (f, "w");
-	fprintf (stream, "hello, world!\n");
-	fprintf (stream, "goodbye, world!\n");
-	fclose (stream);
+void write_pipe(int f, int p){
+	printf("$$$ %d in write_pipe function $$$\n", p);
+	close(pipeLeft[0]);
+	char string[] = "hi everyone! \n";	
+
+	write(f, string, (strlen(string)+1));
+
+	printf("$$$ %d exit write_pipe function $$$\n", p);
 }
 
 /*Read a value from pipe*/
-void read_pipe(int f){
-	FILE *stream;
-	int c;
-	stream = fdopen (f, "r");
-	while ((c = fgetc (stream)) != EOF){
-		putchar (c);
+void read_pipe(int f, int p){
+	printf("$$$ %d in read_pipe function $$$\n", p);
+	close(pipeLeft[1]);
+	int nbytes;
+
+	nbytes = read(pipeLeft[0], readbuffer, sizeof(readbuffer));
+	printf("$$$ nbytes = %d \n", nbytes);
+	if(nbytes == -1){
+		perror ("$$$ Nbytes Error ");
 	}
-	fclose (stream);
+	else{
+        	printf("$$$ Received string: %s \n", readbuffer);		
+	}
+
+	printf("$$$ %d exit read_pipe function $$$\n", p);
 }
+
 
