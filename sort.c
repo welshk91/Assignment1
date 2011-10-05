@@ -82,7 +82,7 @@ int main(int argc, char* argv[]){
 void  spawn()
 {
 	pid_t  pid;
-	//int    status;
+	int    status;
 	int j;
 
 	pid = fork();
@@ -100,6 +100,7 @@ void  spawn()
 		myLog = fopen("log.txt", "a+");
 		fprintf(myLog, "Parent: my pid = %d, parent pid = %d \n", getpid(), getppid());
 		fclose(myLog);
+				
 
 	/*Left Side*/
 		if( (pid=fork()) ==0){
@@ -107,9 +108,8 @@ void  spawn()
 			myLog = fopen("log.txt", "a+");
 			fprintf(myLog, "	Child: my pid = %d, parent pid = %d \n", getpid(), getppid());
 			fclose(myLog);
-
-			//close(pipeLeft[1]);
-			//read_pipe(pipeLeft[0],getpid());
+			waitpid(0,&status,0);
+			waitpid(0,&status,0);
 
 			for(j=0; j<2; j++){	/*Grandchild process*/
 				if( (pid=fork()) ==0){
@@ -118,22 +118,28 @@ void  spawn()
 					fprintf(myLog, "		Grandchild: my pid = %d, parent pid = %d \n", getpid(), getppid());
 					fclose(myLog);
 
-					//close(pipeLeft[0]);
 					sortFile(getpid(), files[j+1]);				
-					//exit(0);
-				}//end of if		
-			}//end of for	
+					
+				}//end of if
+		
+			}//end of for - Grandchildren	
 
-		}//end of if
-	}
+		/*Wait for GrandChildren*/
+		waitpid(0,&status,0);
+		waitpid(0,&status,0);
+		}//end of child
+		
+		/*Wait for Children*/
+		waitpid(0,&status,0);
+		waitpid(0,&status,0);
+	}//end of parent
 
 	/*Right Side*/
 	else if (pid == 0) {          /* for the child process:         */
 		printf("	Child: my pid = %d, parent pid = %d \n", getpid(), getppid());
 		myLog = fopen("log.txt", "a+");
 		fprintf(myLog, "	Child: my pid = %d, parent pid = %d \n", getpid(), getppid());
-		fclose(myLog);
-		//write_pipe(pipeLeft[1], getpid());				
+		fclose(myLog);				
 
 		for(j=0; j<2; j++){	/*Grandchild process*/
 			if( (pid=fork()) ==0){
@@ -143,10 +149,14 @@ void  spawn()
 				fclose(myLog);
 
 				sortFile(getpid(), files[j+3]);
-				//exit(0);
-			}//end of if		
-		}//end of for
 
+			}//end of if	
+	
+		}//end of for Grandchildren
+
+		/*Wait for GrandChildren*/
+		waitpid(0,&status,0);
+		waitpid(0,&status,0);
 	}//end of child
 
 }//end of spawn
@@ -154,14 +164,17 @@ void  spawn()
 /*Function used to compare in qsort()*/
 int compare (const void * a, const void * b)
 {
-
-  if (*((char*)a)==*((char*)b))
+/*
+  if ((strcmp(a, b))==0)
     return 0;
   else
     if (*((char*)a)< *((char*)b))
         return -1;
      else
       return 1;
+*/
+	return (strcmp(a, b));
+
 }
 
 /*Function that opens a file, reads, and sorts it*/
@@ -170,7 +183,7 @@ void sortFile(int p, char f[]){
 	FILE *pFile;
 	char buffer[256];
 
-	printf( "*** %s being read by %d \n", f, p);
+	//printf( "*** %s being read by %d \n", f, p);
 	myLog = fopen("log.txt", "a+");
 	fprintf(myLog, "*** %s being read by %d \n", f, p);
 	fclose(myLog);
@@ -200,6 +213,8 @@ void sortFile(int p, char f[]){
 	fclose(myLog);
 
 	//qsort(buffer, sizeBuffer, sizeof(int), compare);
+	//qsort(buffer, sizeBuffer, sizeof(int), compare);
+
 	//printf("Sorted buffer: %s",buffer);
 	//int n;
 	//for (n=0; n<sizeBuffer; n++)
@@ -226,7 +241,7 @@ void write_pipe(int f, int p){
 	close(pipeLeft[0]);
 	char string[] = "hi everyone! \n";	
 
-	write(f, string, (strlen(string)+1));
+	write(f, string, (strlen(string)));
 
 	printf("$$$ %d exit write_pipe function $$$\n", p);
 	myLog = fopen("log.txt", "a+");
@@ -245,7 +260,7 @@ void read_pipe(int f, int p){
 	int nbytes;
 
 	nbytes = read(pipeLeft[0], readbuffer, sizeof(readbuffer));
-	printf("$$$ nbytes = %d \n", nbytes);
+	//printf("$$$ nbytes = %d \n", read(pipeLeft[0], readbuffer, sizeof(readbuffer)));
 	myLog = fopen("log.txt", "a+");
 	fprintf(myLog, "$$$ nbytes = %d \n", nbytes);
 	fclose(myLog);
