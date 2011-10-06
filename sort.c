@@ -1,8 +1,8 @@
 /*
-Kevin Welsh
-Operating Systems
-October 6, 2011
-Programing Assignment One - Process Tree Sort
+	Kevin Welsh
+	Operating Systems
+	October 6, 2011
+	Programing Assignment One - Process Tree Sort
 */
 
 /*
@@ -65,8 +65,13 @@ int main(int argc, char* argv[]){
 		exit(1);
 	}
 
-	printf("\n-------------------------------------------------\n");
-	fprintf(myLog, "\n--------------------------------------------------------\n");
+	/*Key for log*/
+	printf("\n----------------------------------------------------------\n");
+	fprintf(myLog, "Key: \n");
+	fprintf(myLog, " ***	: Shows input being assigned \n");
+	fprintf(myLog, " $$$	: Output from writing to pipe function \n");
+	fprintf(myLog, " ###	: Output from reading from pipe function \n");
+	fprintf(myLog, "\n-------------------------------------------------------------------\n");
 	printf("Files that need to be sorted: ");
 	fprintf(myLog, "Files that need to be sorted: ");
 	
@@ -139,9 +144,7 @@ void  spawn()
 					fprintf(myLog, "		Grandchild: my pid = %d, parent pid = %d \n", getpid(), getppid());
 					fclose(myLog);
 
-					/*Pipes for Left Grandchildren*/
-					//dup2(pipeUp[WRITE], 1);	//redirect standard output to pipeUp[WRITE]
-					
+					/*Pipes for Left Grandchildren*/					
 					/*First Left Grandkid*/					
 					if(j==0){					
 						dup2(pipeLeft[WRITE], pipeUp[WRITE]);					
@@ -167,6 +170,8 @@ void  spawn()
 		
 		/*Pipes for left child*/
 		dup2(pipeLeft[WRITE], pipeUp[WRITE]);		
+		dup2(pipeLeft[READ], pipeUp[READ]);
+		dup2(pipeRight[READ], pipeUp[READ]);
 
 		close(pipeUp[READ]);
 		close(pipeLeft[WRITE]);
@@ -239,6 +244,8 @@ void  spawn()
 		
 		/*Pipes for Right Child*/
 		dup2(pipeRight[WRITE], pipeUp[WRITE]);
+		dup2(pipeLeft[READ], pipeUp[READ]);
+		dup2(pipeRight[READ], pipeUp[READ]);
 
 		close(pipeUp[READ]);
 		close(pipeLeft[WRITE]);
@@ -325,56 +332,57 @@ void sortFile(int p, char f[]){
 void write_pipe(int f, int p, char b []){
 	//printf("$$$ %d in write_pipe function $$$\n", p);
 	myLog = fopen("log.txt", "a+");
-	fprintf(myLog, "$$$ %d in write_pipe function $$$\n", p);
+	fprintf(myLog, "$$$ %d in write_pipe function \n", p);
 	fclose(myLog);	
 
 	write(f, b, (strlen(b)));
 	myLog = fopen("log.txt", "a+");
-	fprintf(myLog, "$$$ %d wrote %s to pipe $$$\n", p, b);
+	fprintf(myLog, "$$$ %d wrote %s to pipe \n", p, b);
 	fclose(myLog);
 
 	//printf("$$$ %d exit write_pipe function $$$\n", p);
 	myLog = fopen("log.txt", "a+");
-	fprintf(myLog, "$$$ %d exit write_pipe function $$$\n", p);
+	fprintf(myLog, "$$$ %d exit write_pipe function \n", p);
 	fclose(myLog);
 }
 
 /*Read a value from pipe*/
 void read_pipe(int f, int p){
+	int nbytes;
+	
 	//printf("$$$ %d in read_pipe function $$$\n", p);
 	myLog = fopen("log.txt", "a+");
-	fprintf(myLog, "$$$ %d in read_pipe function $$$\n", p);
+	fprintf(myLog, "### %d in read_pipe function \n", p);
 	fclose(myLog);
 
-	close(pipeLeft[1]);
-	int nbytes;
+	
 
 	nbytes = read(f, readbuffer, sizeof(readbuffer));
 	myLog = fopen("log.txt", "a+");
-	fprintf(myLog, "$$$ %d read %s from pipe $$$\n", p, readbuffer);
+	fprintf(myLog, "### %d read %s from pipe \n", p, readbuffer);
 	fclose(myLog);
 
 	//printf("$$$ nbytes = %d \n", read(pipeLeft[0], readbuffer, sizeof(readbuffer)));
 	myLog = fopen("log.txt", "a+");
-	fprintf(myLog, "$$$ nbytes = %d \n", nbytes);
+	fprintf(myLog, "### nbytes = %d \n", nbytes);
 	fclose(myLog);
 
 	if(nbytes == -1){
-		perror ("$$$ Nbytes Error ");
+		perror ("### Nbytes Error ");
 		myLog = fopen("log.txt", "a+");
-		fprintf(myLog, "$$$ Nbytes ERROR");
+		fprintf(myLog, "### Nbytes ERROR");
 		fclose(myLog);
 	}
 	else{
-        	printf("$$$ Received string: %s \n", readbuffer);
+        	printf("### Received string: %s \n", readbuffer);
 		myLog = fopen("log.txt", "a+");
-		fprintf(myLog, "$$$ Received string: %s \n", readbuffer);
+		fprintf(myLog, "### Received string: %s \n", readbuffer);
 		fclose(myLog);		
 	}
 
 	//printf("$$$ %d exit read_pipe function $$$\n", p);
 	myLog = fopen("log.txt", "a+");
-	fprintf(myLog, "$$$ %d exit read_pipe function $$$\n", p);
+	fprintf(myLog, "### %d exit read_pipe function \n", p);
 	fclose(myLog);
 }
 
