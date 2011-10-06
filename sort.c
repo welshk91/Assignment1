@@ -1,3 +1,15 @@
+/*
+Kevin Welsh
+Operating Systems
+October 6, 2011
+Programing Assignment One - Process Tree Sort
+*/
+
+/*
+To compile:	gcc sort.c -Wall -lm -g -lpthread
+To run:		./a.out file1 file2 file3 file4
+*/
+
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -12,37 +24,44 @@
 #define READ 0 
 #define WRITE 1 
 
+/*Function Prototypes*/
 void spawn();
 void sortFile(int p, char f[]);
-char* files[] = {};
 void read_pipe(int f, int p);
 void write_pipe(int f, int p);
+
+/*Global Variables*/
+char* files[] = {};
 int pipeLeft[2] = {0};
 int pipeRight[2] = {0};
+int pipeUp[2] = {0};
 FILE *myLog;
 char readbuffer[80];
 
-/*
-To compile:	gcc sort.c -Wall -lm -g -lpthread
-To run:		./a.out file1 file2 file3 file4 ... fileN
-*/
-
+/*Main function*/
 int main(int argc, char* argv[]){
 	
 	/* Create a Log */
 	myLog = fopen("log.txt","w+");
 
-	/* Create the pipes.  */
+	/* Create the right pipe.  */
 	if (pipe(pipeRight)){
 		printf ("Pipe Right failed to create \n");
 		fprintf(myLog, "Pipe Right failed to create \n");
 		exit(1);
 	}
 
-	/* Create the pipes.  */
+	/* Create the left pipe.  */
 	if (pipe (pipeLeft)){
 		printf ("Pipe Left failed to create \n");
 		fprintf(myLog, "Pipe Left failed to create \n");
+		exit(1);
+	}
+
+	/* Create the up pipe.  */
+	if (pipe(pipeUp)){
+		printf ("Pipe Up failed to create \n");
+		fprintf(myLog, "Pipe Right failed to create \n");
 		exit(1);
 	}
 
@@ -53,8 +72,9 @@ int main(int argc, char* argv[]){
 	
 	fclose(myLog);
 
+	
+	/*Prints the files given in the arguments*/
 	int i;
-	//Prints the files given in the arguments
 	for(i = 1; i < argc; i++ )
 	{
 		printf( "%s ", argv[i] );
@@ -87,7 +107,8 @@ void  spawn()
 
 	pid = fork();
 
-	if (pid < 0) {		/*Error*/
+	/*Error*/
+	if (pid < 0) {		
 	        printf("*** ERROR: forking child process failed\n");
 		myLog = fopen("log.txt", "a+");
 		fprintf(myLog, "*** ERROR: forking child process failed\n");
@@ -95,28 +116,35 @@ void  spawn()
 	        exit(1);
 	}
 
-	else if(pid>0) {                                  /* for the parent:      */
+	/* Parent*/
+	else if(pid>0) {                                  
 		printf("Parent: my pid = %d, parent pid = %d \n", getpid(), getppid());
 		myLog = fopen("log.txt", "a+");
 		fprintf(myLog, "Parent: my pid = %d, parent pid = %d \n", getpid(), getppid());
 		fclose(myLog);
 				
 
-	/*Left Side*/
+		/*Left Side*/
 		if( (pid=fork()) ==0){
 			printf("	Child: my pid = %d, parent pid = %d \n", getpid(), getppid());
 			myLog = fopen("log.txt", "a+");
 			fprintf(myLog, "	Child: my pid = %d, parent pid = %d \n", getpid(), getppid());
-			fclose(myLog);
-			waitpid(0,&status,0);
-			waitpid(0,&status,0);
+			fclose(myLog);		
 
-			for(j=0; j<2; j++){	/*Grandchild process*/
+			/*Grandchild process*/
+			for(j=0; j<2; j++){	
 				if( (pid=fork()) ==0){
 					printf("		Grandchild: my pid = %d, parent pid = %d \n", getpid(), getppid());
 					myLog = fopen("log.txt", "a+");
 					fprintf(myLog, "		Grandchild: my pid = %d, parent pid = %d \n", getpid(), getppid());
 					fclose(myLog);
+
+					//set up pipes for grandchildren here!!!
+					close(pipeUp[READ]);
+					close(pipeLeft[READ]);
+					close(pipeLeft[WRITE]);
+					close(pipeRight[READ]);
+					close(pipeRight[WRITE]);
 
 					sortFile(getpid(), files[j+1]);				
 					
@@ -124,15 +152,26 @@ void  spawn()
 		
 			}//end of for - Grandchildren	
 
-		/*Wait for GrandChildren*/
-		waitpid(0,&status,0);
-		waitpid(0,&status,0);
-		}//end of child
+		/*Children Wait for Left GrandChildren*/
 		
-		/*Wait for Children*/
+		//set up pipes for left child here!!!
+		close(pipeUp[READ]);
+		close(pipeLeft[WRITE]);
+		close(pipeRight[WRITE]);
 		waitpid(0,&status,0);
 		waitpid(0,&status,0);
-	}//end of parent
+		}//end of Left Child
+		
+		/*Parent Waits for Children*/
+
+		//set up pipes for Parent here!!!!
+		close(pipeUp[WRITE]);
+		close(pipeUp[READ]);
+		close(pipeLeft[WRITE]);
+		close(pipeRight[WRITE]);
+		waitpid(0,&status,0);
+		waitpid(0,&status,0);
+	}//end of Parent
 
 	/*Right Side*/
 	else if (pid == 0) {          /* for the child process:         */
@@ -141,12 +180,20 @@ void  spawn()
 		fprintf(myLog, "	Child: my pid = %d, parent pid = %d \n", getpid(), getppid());
 		fclose(myLog);				
 
-		for(j=0; j<2; j++){	/*Grandchild process*/
+		/*Grandchild process*/
+		for(j=0; j<2; j++){	
 			if( (pid=fork()) ==0){
 				printf("		Grandchild: my pid = %d, parent pid = %d \n", getpid(), getppid());
 				myLog = fopen("log.txt", "a+");
 				fprintf(myLog, "		Grandchild: my pid = %d, parent pid = %d \n", getpid(), getppid());
 				fclose(myLog);
+
+				//set up pipes for grandchildren here!!!
+				close(pipeUp[READ]);
+				close(pipeLeft[READ]);
+				close(pipeLeft[WRITE]);
+				close(pipeRight[READ]);
+				close(pipeRight[WRITE]);
 
 				sortFile(getpid(), files[j+3]);
 
@@ -154,10 +201,16 @@ void  spawn()
 	
 		}//end of for Grandchildren
 
-		/*Wait for GrandChildren*/
+		/*Children Wait for Right GrandChildren*/
+		
+		//set up pipes for right child here!!!
+		close(pipeUp[READ]);
+		close(pipeLeft[WRITE]);
+		close(pipeRight[WRITE]);
+
 		waitpid(0,&status,0);
 		waitpid(0,&status,0);
-	}//end of child
+	}//end of Right Child
 
 }//end of spawn
 
