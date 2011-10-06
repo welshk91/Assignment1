@@ -28,7 +28,7 @@ To run:		./a.out file1 file2 file3 file4
 void spawn();
 void sortFile(int p, char f[]);
 void read_pipe(int f, int p);
-void write_pipe(int f, int p);
+void write_pipe(int f, int p, char b[]);
 
 /*Global Variables*/
 char* files[] = {};
@@ -139,7 +139,18 @@ void  spawn()
 					fprintf(myLog, "		Grandchild: my pid = %d, parent pid = %d \n", getpid(), getppid());
 					fclose(myLog);
 
-					//set up pipes for grandchildren here!!!
+					/*Pipes for Left Grandchildren*/
+					//dup2(pipeUp[WRITE], 1);	//redirect standard output to pipeUp[WRITE]
+					
+					/*First Left Grandkid*/					
+					if(j==0){					
+						dup2(pipeLeft[WRITE], pipeUp[WRITE]);					
+					}
+					/*Second Left Grandkid*/
+					else{
+						dup2(pipeRight[WRITE], pipeUp[WRITE]);
+					}
+
 					close(pipeUp[READ]);
 					close(pipeLeft[READ]);
 					close(pipeLeft[WRITE]);
@@ -154,23 +165,35 @@ void  spawn()
 
 		/*Children Wait for Left GrandChildren*/
 		
-		//set up pipes for left child here!!!
+		/*Pipes for left child*/
+		dup2(pipeLeft[WRITE], pipeUp[WRITE]);		
+
 		close(pipeUp[READ]);
 		close(pipeLeft[WRITE]);
 		close(pipeRight[WRITE]);
 		waitpid(0,&status,0);
 		waitpid(0,&status,0);
+		
+		read_pipe(pipeLeft[READ], getpid());
+		read_pipe(pipeRight[READ], getpid());
 		}//end of Left Child
 		
 		/*Parent Waits for Children*/
 
-		//set up pipes for Parent here!!!!
+		/*Pipes for Parent*/
+		//dup2(pipeLeft[READ], pipeUp[READ]);	//connect left pipe to up read
+		//dup2(pipeRight[READ], pipeUp[READ]); 	//connect right pipe to up read
+
 		close(pipeUp[WRITE]);
 		close(pipeUp[READ]);
 		close(pipeLeft[WRITE]);
 		close(pipeRight[WRITE]);
 		waitpid(0,&status,0);
 		waitpid(0,&status,0);
+		
+		read_pipe(pipeLeft[READ], getpid());
+		read_pipe(pipeRight[READ], getpid());	
+
 	}//end of Parent
 
 	/*Right Side*/
@@ -188,7 +211,18 @@ void  spawn()
 				fprintf(myLog, "		Grandchild: my pid = %d, parent pid = %d \n", getpid(), getppid());
 				fclose(myLog);
 
-				//set up pipes for grandchildren here!!!
+				/*Pipes for Right Grandchildren*/
+				//dup2(pipeUp[WRITE], 1);	//redirect standard output to pipeUp[WRITE]
+				
+				/*First Right Grandkid*/					
+				if(j==0){					
+					dup2(pipeLeft[WRITE], pipeUp[WRITE]);					
+				}
+				/*Second Right Grandkid*/
+				else{
+					dup2(pipeRight[WRITE], pipeUp[WRITE]);
+				}
+
 				close(pipeUp[READ]);
 				close(pipeLeft[READ]);
 				close(pipeLeft[WRITE]);
@@ -203,13 +237,19 @@ void  spawn()
 
 		/*Children Wait for Right GrandChildren*/
 		
-		//set up pipes for right child here!!!
+		/*Pipes for Right Child*/
+		dup2(pipeRight[WRITE], pipeUp[WRITE]);
+
 		close(pipeUp[READ]);
 		close(pipeLeft[WRITE]);
 		close(pipeRight[WRITE]);
 
 		waitpid(0,&status,0);
 		waitpid(0,&status,0);
+
+		read_pipe(pipeLeft[READ], getpid());
+		read_pipe(pipeRight[READ], getpid());
+		
 	}//end of Right Child
 
 }//end of spawn
@@ -227,7 +267,6 @@ int compare (const void * a, const void * b)
       return 1;
 */
 	return (strcmp(a, b));
-
 }
 
 /*Function that opens a file, reads, and sorts it*/
@@ -266,7 +305,6 @@ void sortFile(int p, char f[]){
 	fclose(myLog);
 
 	//qsort(buffer, sizeBuffer, sizeof(int), compare);
-	//qsort(buffer, sizeBuffer, sizeof(int), compare);
 
 	//printf("Sorted buffer: %s",buffer);
 	//int n;
@@ -278,25 +316,24 @@ void sortFile(int p, char f[]){
 	fprintf(myLog, "\n");
 	fclose(myLog);
 
-	//write_pipe(pipeLeft[WRITE], getpid());	
-	//read_pipe(pipeLeft[READ], getpid());
+	write_pipe(pipeUp[WRITE], getpid(), buffer);	
 
 	exit(0);
 }
 
 /*Write a value to pipe*/
-void write_pipe(int f, int p){
-	printf("$$$ %d in write_pipe function $$$\n", p);
+void write_pipe(int f, int p, char b []){
+	//printf("$$$ %d in write_pipe function $$$\n", p);
 	myLog = fopen("log.txt", "a+");
 	fprintf(myLog, "$$$ %d in write_pipe function $$$\n", p);
+	fclose(myLog);	
+
+	write(f, b, (strlen(b)));
+	myLog = fopen("log.txt", "a+");
+	fprintf(myLog, "$$$ %d wrote %s to pipe $$$\n", p, b);
 	fclose(myLog);
 
-	close(pipeLeft[0]);
-	char string[] = "hi everyone! \n";	
-
-	write(f, string, (strlen(string)));
-
-	printf("$$$ %d exit write_pipe function $$$\n", p);
+	//printf("$$$ %d exit write_pipe function $$$\n", p);
 	myLog = fopen("log.txt", "a+");
 	fprintf(myLog, "$$$ %d exit write_pipe function $$$\n", p);
 	fclose(myLog);
@@ -304,7 +341,7 @@ void write_pipe(int f, int p){
 
 /*Read a value from pipe*/
 void read_pipe(int f, int p){
-	printf("$$$ %d in read_pipe function $$$\n", p);
+	//printf("$$$ %d in read_pipe function $$$\n", p);
 	myLog = fopen("log.txt", "a+");
 	fprintf(myLog, "$$$ %d in read_pipe function $$$\n", p);
 	fclose(myLog);
@@ -312,7 +349,11 @@ void read_pipe(int f, int p){
 	close(pipeLeft[1]);
 	int nbytes;
 
-	nbytes = read(pipeLeft[0], readbuffer, sizeof(readbuffer));
+	nbytes = read(f, readbuffer, sizeof(readbuffer));
+	myLog = fopen("log.txt", "a+");
+	fprintf(myLog, "$$$ %d read %s from pipe $$$\n", p, readbuffer);
+	fclose(myLog);
+
 	//printf("$$$ nbytes = %d \n", read(pipeLeft[0], readbuffer, sizeof(readbuffer)));
 	myLog = fopen("log.txt", "a+");
 	fprintf(myLog, "$$$ nbytes = %d \n", nbytes);
@@ -331,7 +372,7 @@ void read_pipe(int f, int p){
 		fclose(myLog);		
 	}
 
-	printf("$$$ %d exit read_pipe function $$$\n", p);
+	//printf("$$$ %d exit read_pipe function $$$\n", p);
 	myLog = fopen("log.txt", "a+");
 	fprintf(myLog, "$$$ %d exit read_pipe function $$$\n", p);
 	fclose(myLog);
