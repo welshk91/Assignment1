@@ -1,0 +1,46 @@
+Key: 
+ ***	: Shows input being assigned 
+ $$$	: Output from writing to pipe function 
+ ###	: Output from reading from pipe function 
+
+-------------------------------------------------------------------
+Files that need to be sorted: file1 file2 file3 file4 
+
+	PROCESS TREE	
+Parent: my pid = 15285, parent pid = 12393 
+	Child: my pid = 15286, parent pid = 15285 
+	Child: my pid = 15287, parent pid = 15285 
+		Grandchild: my pid = 15288, parent pid = 15286 
+		Grandchild: my pid = 15289, parent pid = 15286 
+*** file3 being read by 15288 
+		Grandchild: my pid = 15290, parent pid = 15287 
+		Grandchild: my pid = 15291, parent pid = 15287 
+Unsorted file3 : 1 2 3 4 5 0
+*** file4 being read by 15289 
+
+*** file2 being read by 15291 
+Unsorted file4 : 3 -4 5 9 11 5
+*** file1 being read by 15290 
+
+$$$ 15288 in write_pipe function 
+$$$ 15289 in write_pipe function 
+Unsorted file1 : 11 5 8 3 7 
+$$$ 15289 wrote 3 -4 5 9 11 5
+ to pipe 
+$$$ 15288 wrote 1 2 3 4 5 0
+ to pipe 
+Unsorted file2 : 78 92 34 12 9 0 3
+$$$ 15289 exit write_pipe function 
+
+$$$ 15288 exit write_pipe function 
+$$$ 15290 in write_pipe function 
+
+### 15286 in read_pipe function 
+$$$ 15290 wrote 11 5 8 3 7 
+ to pipe 
+$$$ 15291 in write_pipe function 
+$$$ 15290 exit write_pipe function 
+$$$ 15291 wrote 78 92 34 12 9 0 3
+ to pipe 
+$$$ 15291 exit write_pipe function 
+### 15287 in read_pipe function 
